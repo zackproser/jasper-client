@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 import os
-import re
 import logging
-import gettext
 import ConfigParser as configparser
 import imp
 import inspect
+from . import i18n
 from . import plugin
 
 
@@ -14,7 +13,7 @@ MANDATORY_OPTIONS = (
     ('Plugin', 'Version'),
     ('Plugin', 'License')
 )
-RE_TRANSLATIONS = re.compile(r'^[a-z]{2}(-[A-Z]{2}){0,1}$')
+
 PLUGIN_INFO_FILENAME = "plugin.info"
 PLUGIN_TRANSLATIONS_DIRNAME = "locale"
 
@@ -40,21 +39,6 @@ def parse_info_file(infofile_path):
 
     logger.debug("Plugin info file '%s' parsed successfully!", infofile_path)
     return cp
-
-
-def parse_translations(translations_path):
-    translations = {}
-    if os.path.isdir(translations_path):
-        for content in os.listdir(translations_path):
-            if not os.path.isdir(os.path.join(translations_path, content)):
-                lang, ext = os.path.splitext(content)
-                if ext == (os.extsep + 'mo') and RE_TRANSLATIONS.match(lang):
-                    with open(os.path.join(translations_path, content)) as f:
-                        translations[lang] = gettext.GNUTranslations(f)
-    if not translations:
-        # Untranslated module, assume hardcoded en-US strings
-        translations['en-US'] = gettext.NullTranslations()
-    return translations
 
 
 def parse_plugin_class(module_name, plugin_directory, superclasses):
@@ -185,7 +169,7 @@ class PluginStore(object):
 
         translations_path = os.path.join(plugin_directory,
                                          self._translations_dirname)
-        translations = parse_translations(translations_path)
+        translations = i18n.parse_translations(translations_path)
 
         module_name = get_module_name(cp.get('Plugin', 'Name'),
                                       cp.get('Plugin', 'Version'))
